@@ -18,7 +18,9 @@ Track CPU usage (%), Memory usage (%), and Network Usage (KB)
 Record the metrics in a text file (usage.txt) on the disk
 List all active processes (in processes.txt file)
 Write a CPython that will read all metrics from the usage.txt file and plot the values in a graph
+
 Q2. Multi-Threading (6)
+
 
 Assessment Goals
 
@@ -35,6 +37,7 @@ There will be another thread (consumer) that will be taking the bottles off the 
 The consumer will only work if there is a bottle on the queue.
 The queue can only handle 10 bottles (if the queue reaches 10 bottles, the producer will stop while the consumer will taking the bottles off. as long as the bottles on the queue go below the 10, the producer will resume its work)
 The producer will be incrementing the number of bottles on the queue while the consumer will be decrementing the number of bottles.
+
 Q3. Socket (6)
 
 Assessment Goals
@@ -52,6 +55,7 @@ Implement the server
 Implement 4 clients
 Ensure that chats are bidirectional (either side can send but also can receive)
 Ensure that only connected and authenticated clients can communicate
+
 Q4. IP Capture (5)
 
 Assessment Goal
