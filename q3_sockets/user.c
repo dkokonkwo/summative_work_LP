@@ -18,7 +18,6 @@ int user_verify(int socket)
         if (valread <= 0)
         {
             printf("Server disconnected.\n");
-            free(server_response);
             return 0;
         }
         server_response[valread] = '\0';
@@ -27,13 +26,18 @@ int user_verify(int socket)
             printf("%s\n", server_response);
             return 1;
         }
+
+        printf("%s", server_response);
+
+        printf("Enter your username: ");
         fgets(my_username, BUFFER_SIZE, stdin);
+        my_username[strcspn(my_username, "\n")] = '\0';
+
         send(socket, my_username, strlen(my_username), 0);
 
-        if (strncmp(my_username, "exit", 4) == 0)
+        if (strcmp(my_username, "exit") == 0)
         {
             printf("Client chose to exit during login.\n");
-            free(server_response);
             return 0;
         }
     }
@@ -66,7 +70,7 @@ int main() {
         return -1;
     }
 
-    printf("Connected to the server.");
+    printf("Connected to the server.\n");
 
     verified = user_verify(sock);
 
