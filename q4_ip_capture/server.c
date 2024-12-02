@@ -35,16 +35,17 @@ void *receive_info(void *arg) {
             printf("Client disconnected.\n");
             break;
         }
+
+        if (strncmp(buffer, "done", 4) == 0) {
+            printf("Client ended communication.\n");
+            break;
+        }
+
         printf("New device: %s\n", buffer);
 
         if (fprintf(file, "%s\n", buffer) < 0)
         {
             perror("Could not add new device");
-        }
-
-        if (strncmp(buffer, "done", 4) == 0) {
-            printf("Client ended communication.\n");
-            break;
         }
         buffer[valread] = '\0';
     } 

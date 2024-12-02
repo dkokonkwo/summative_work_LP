@@ -12,11 +12,12 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define HOST "127.0.0.1"
-#define NETWORK_PREFIX "192.168.1"
+#define NETWORK_PREFIX "192.168.2"
 
 int sockfd;  // Global variable for the server socket
 
-void *receive_messages(void *arg) {
+void *receive_messages(void *arg)
+{
     char buffer[BUFFER_SIZE];
     while (1) {
         memset(buffer, 0, BUFFER_SIZE);
@@ -44,30 +45,33 @@ void scan_network_and_send() {
     char ip[BUFFER_SIZE];
     char message[BUFFER_SIZE];
     struct sockaddr_in sa;
-    socklen_t len = sizeof(sa);
+    // socklen_t len = sizeof(sa);
     struct hostent *he;
 
-    for (int i = 1; i <= 254; i++) {
+    for (int i = 1; i <= 254; i++) 
+    {
         snprintf(ip, BUFFER_SIZE, "%s.%d", NETWORK_PREFIX, i);
 
         // Check if the IP is reachable via a socket connection
         sa.sin_family = AF_INET;
         sa.sin_port = htons(PORT);
-        if (inet_pton(AF_INET, ip, &sa.sin_addr) <= 0) {
+        if (inet_pton(AF_INET, ip, &sa.sin_addr) <= 0)
+        {
             continue; // Skip invalid IPs
         }
 
         // Try resolving hostname
         he = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), AF_INET);
-        if (he) {
-            snprintf(message, BUFFER_SIZE, "IP: %s, Hostname: %s", ip, he->h_name);
-        } else {
-            snprintf(message, BUFFER_SIZE, "IP: %s, Hostname: Unknown", ip);
+        if (he)
+        {
+            snprintf(message, BUFFER_SIZE, "IP: %.15s, Hostname: %.900s", ip, he->h_name);
+            send(sockfd, message, strlen(message), 0);
+            printf("Sent: %s\n", message);
         }
+        // else
+        //     snprintf(message, BUFFER_SIZE, "IP: %.15s, Hostname: Unknown", ip);
 
         // Send the IP and hostname to the server
-        send(sockfd, message, strlen(message), 0);
-        printf("Sent: %s\n", message);
     }
 
     // Signal the server that the scan is done
@@ -76,7 +80,8 @@ void scan_network_and_send() {
     printf("Scan complete.\n");
 }
 
-void *send_messages(void *arg) {
+void *send_messages(void *arg)
+{
     scan_network_and_send();
     return NULL;
 }
