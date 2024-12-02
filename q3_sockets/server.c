@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <fcntl.h>
-#include <pthread.h>
 
 #define PORT 8080
 #define MAX_CLIENTS 4
@@ -18,48 +17,80 @@ char *usernames[4] = {
         "kdot1975",
         "d4v1d"};
 
-int online[4] = {0};
+int online[MAX_CLIENTS] = {0};
 
 
 
 char *verify_user(int socket)
 {
-    char confirm_user[BUFFER_SIZE] = "Enter your username:";
     char *username = malloc(BUFFER_SIZE);
-    send(socket, confirm_user, strlen(confirm_user), 0);
+    if (!username)
+    {
+        perror("Malloc failed..");
+        return NULL;
+    }
+    char prompt[BUFFER_SIZE] = "Enter your username: ";
+    send(socket, prompt, strlen(prompt), 0);
     printf("Verifying user...\n");
     while (1)
     {
+        memset(username, 0, BUFFER_SIZE);
         int valread = recv(socket, username, BUFFER_SIZE, 0);
-        if (valread <= 0) {
+        if (valread <= 0)
+        {
             printf("Client disconnected.\n");
-            break;
+            free(username);
+            return NULL;
         }
+
+        username[valread] = '\0';
+
         for (int i = 0; i < MAX_CLIENTS; i++)
         {
             if (strcmp(usernames[i], username) == 0)
             {
-                printf("Login successful\n");
-                online[i] = 1;
-                return username;
+                if (online[i] == 1)
+                {
+                    char msg[BUFFER_SIZE] = "User already logged in. Try a different username.\n";
+                    send(socket, msg, strlen(msg), 0);
+                }
+                else
+                {
+                    printf("Login successful for user: %s\n", username);
+                    online[i] = 1;
+                    return username;
+                }
             }
         }
 
         if (strncmp(username, "exit", 4) == 0) {
-            printf("Client ended communication.\n");
-            break;
+            printf("Client chose to exit during login.\n");
+            free(username);
+            return NULL;
         }
 
-        char message[BUFFER_SIZE] = "Login unsuccessful. Enter valid username or type \"exit\" to quit";
-        send(socket, message, strlen(message), 0);
+        char error_msg[BUFFER_SIZE] = "Login unsuccessful. Enter valid username or type \"exit\" to quit";
+        send(socket, error_msg, strlen(error_msg), 0);
         
     }
-    return NULL;
 }
 
+void show_online_users(int socket)
+{
+    char buffer[BUFFER_SIZE] = "Online users:\n";
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (online[i] == 1)
+        {
+            strcat(buffer, usernames[i]);
+            strcat(buffer, "\n");
+        }
+    }
+    send(socket, buffer, strlen(buffer), 0);
+}
 
 int main() {
-    int server_fd, new_socket, max_sd, activity, sd, client_socket[MAX_CLIENTS];;
+    int server_fd, new_socket, max_sd, activity, sd, client_socket[MAX_CLIENTS];
     struct sockaddr_in address;
     fd_set readfds;
     char buffer[BUFFER_SIZE];
@@ -87,16 +118,18 @@ int main() {
 
     if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
         perror("Bind failed");
+        close(server_fd);
         exit(EXIT_FAILURE);
     }
 
     // Listen for incoming connections
     if (listen(server_fd, 3) < 0) {
         perror("Listen failed");
+        close(server_fd);
         exit(EXIT_FAILURE);
     }
 
-    printf("Server listening on port %d\n", PORT);
+    printf("Chat server started on port %d\n", PORT);
 
     while (1) {
         // Clear and set up socket set
