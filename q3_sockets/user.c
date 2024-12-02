@@ -34,27 +34,46 @@ int main() {
         return -1;
     }
 
-    printf("Connected to the server. Enter two numbers to add or type 'end' to disconnect.\n");
+    printf("Connected to the server.");
 
     while (1) {
-        printf("Enter two numbers separated by space (or 'end' to quit): ");
+        printf("Use <receipent index> <message> to chat (or type end to quit): ");
+        memset(buffer, 0, BUFFER_SIZE);
         fgets(buffer, BUFFER_SIZE, stdin);
 
+        buffer[strcspn(buffer, "\n")] = '\0';
+
         // Check for "end" message to terminate connection
-        if (strncmp(buffer, "end", 3) == 0) {
+        if (strncmp(buffer, "end", 3) == 0)
+        {
             send(sock, buffer, strlen(buffer), 0);
             printf("Ending connection.\n");
             break;
         }
 
-        // Send the numbers to the server
-        send(sock, buffer, strlen(buffer), 0);
+        // Sending message to the server
+        if (send(sock, buffer, strlen(buffer), 0) < 0)
+        {
+            perror("Failed to send message");
+            break;
+        }
 
         // Receive the response from the server
         memset(buffer, 0, BUFFER_SIZE);
         int valread = recv(sock, buffer, BUFFER_SIZE, 0);
-        if (valread > 0) {
+        if (valread > 0)
+        {
             printf("Server response: %s\n", buffer);
+        }
+        else if (valread == 0)
+        {
+            printf("Server disconnected.\n");
+            break;
+        }
+        else
+        {
+            perror("Error receiving server response");
+            break;
         }
     }
 

@@ -78,12 +78,13 @@ char *verify_user(int socket)
 void show_online_users(int socket)
 {
     char buffer[BUFFER_SIZE] = "Online users:\n";
+    char temp[BUFFER_SIZE];
     for (int i = 0; i < MAX_CLIENTS; i++)
     {
         if (online[i] == 1)
         {
-            strcat(buffer, usernames[i]);
-            strcat(buffer, "\n");
+            snprintf(temp, sizeof(temp), "%d: %s\n", i, usernames[i]);
+            strncat(buffer, temp, sizeof(buffer) - strlen(buffer) - 1);
         }
     }
     send(socket, buffer, strlen(buffer), 0);
@@ -94,7 +95,6 @@ int main() {
     struct sockaddr_in address;
     fd_set readfds;
     char buffer[BUFFER_SIZE];
-    char *user;
 
     // Initialize all client sockets to 0
     for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -148,7 +148,8 @@ int main() {
         activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
 
         // Check for new connection
-        if (FD_ISSET(server_fd, &readfds)) {
+        if (FD_ISSET(server_fd, &readfds)) 
+        {
             socklen_t addrlen = sizeof(address);
             new_socket = accept(server_fd, (struct sockaddr*)&address, &addrlen);
 
@@ -161,30 +162,36 @@ int main() {
                 printf("New connection, socket fd is %d, ip is: %s, port: %d\n",
                        new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
-                user = verify_user(new_socket);
+                char *user = verify_user(new_socket);
                 if (user)
                 {
-                // Add new socket to client array
-                show_online_users();
-                for (int i = 0; i < MAX_CLIENTS; i++)
-                {
-                    if (client_socket[i] == 0)
+                    printf("User logged in: %s\n", user);
+                    // Add new socket to client array
+                    for (int i = 0; i < MAX_CLIENTS; i++)
                     {
-                        client_socket[i] = new_socket;
-                        break;
+                        if (strcmp(usernames[i], user) == 0)
+                        {
+                            client_socket[i] = new_socket;
+                            break;
+                        }
                     }
+                    show_online_users(new_socket);
+                    free(user);
                 }
+                else
+                {
+                    close(new_socket);
                 }
-
-                
             }
         }
 
 
-        // Check each client for incoming data
-        for (int i = 0; i < MAX_CLIENTS; i++) {
+        // Check client sockets for activity
+        for (int i = 0; i < MAX_CLIENTS; i++) 
+        {
             sd = client_socket[i];
-            if (FD_ISSET(sd, &readfds)) {
+            if (FD_ISSET(sd, &readfds)) 
+            {
                 memset(buffer, 0, BUFFER_SIZE);
                 int valread = recv(sd, buffer, BUFFER_SIZE, 0);
 
@@ -193,19 +200,46 @@ int main() {
                     close(sd);
                     client_socket[i] = 0;
                     printf("Client disconnected, socket fd is %d\n", sd);
-                } else {
+                } 
+                else 
+                {
+                    buffer[valread] = '\0';
                     // Check for "end" message
-                    if (strncmp(buffer, "end", 3) == 0) {
+                    if (strncmp(buffer, "end", 3) == 0) 
+                    {
                         close(sd);
                         client_socket[i] = 0;
                         printf("Client sent end message, disconnecting socket fd %d\n", sd);
-                    } else {
+                    } 
+                    else 
+                    {
                         // Read two numbers from the buffer, compute sum, and send back to client
                         int receipient;
                         char message[BUFFER_SIZE];
-                        sscanf(buffer, "%d %s", &receipient, &message);
-                        sprintf(buffer, "%s: %s", user, message);
-                        send(client_socket[receipient], buffer, strlen(buffer), 0);
+                        char response[BUFFER_SIZE];
+                        char *msg_start = strchr(buffer, ' ');
+                        if (msg_start && sscanf(buffer, "%d", &receipient) == 1)
+                        {
+                            msg_start++;
+                            if (receipient >= 0 && receipient < MAX_CLIENTS && online[receipient] && client_socket[receipient] > 0)
+                            {
+                                snprintf(message, BUFFER_SIZE, "%s: %s", usernames[i], msg_start);
+                                send(client_socket[receipient], message, strlen(message), 0);
+                                printf("Message sent from %s to %s: \n", usernames[i], usernames[receipient]);
+                                sprintf(response, "%s\n", "Message sent");
+                                send(sd, response, strlen(response), 0);
+                            }
+                            else
+                            {
+                                char error_msg[] = "Invalied receipient or user is offline.\n";
+                                send(sd, error_msg, strlen(error_msg), 0);
+                            }
+                        }
+                        else
+                        {
+                            char error_msg[] = "Invalid message format. use <receipient index> <message>\n";
+                            send(sd, error_msg, strlen(error_msg), 0);
+                        }
                     }
                 }
             }
