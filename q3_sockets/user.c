@@ -8,10 +8,42 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
+int user_verify(int socket)
+{
+    char server_response[BUFFER_SIZE];
+    char my_username[BUFFER_SIZE];
+    while (1)
+    {
+        int valread = recv(socket, server_response, BUFFER_SIZE, 0);
+        if (valread <= 0)
+        {
+            printf("Server disconnected.\n");
+            free(server_response);
+            return 0;
+        }
+        server_response[valread] = '\0';
+        if (strncmp(server_response, "Login successful", 16) == 0)
+        {
+            printf("%s\n", server_response);
+            return 1;
+        }
+        fgets(my_username, BUFFER_SIZE, stdin);
+        send(socket, my_username, strlen(my_username), 0);
+
+        if (strncmp(my_username, "exit", 4) == 0)
+        {
+            printf("Client chose to exit during login.\n");
+            free(server_response);
+            return 0;
+        }
+    }
+}
+
 int main() {
     int sock = 0;
     struct sockaddr_in serv_addr;
     char buffer[BUFFER_SIZE] = {0};
+    int verified;
 
     // Create socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -35,6 +67,15 @@ int main() {
     }
 
     printf("Connected to the server.");
+
+    verified = user_verify(sock);
+
+    if (!verified)
+    {
+        printf("Could not verify user.\n Ending connection\n");
+        close(sock);
+        return 1;
+    }
 
     while (1) {
         printf("Use <receipent index> <message> to chat (or type end to quit): ");

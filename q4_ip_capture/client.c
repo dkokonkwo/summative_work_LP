@@ -81,7 +81,8 @@ void *send_messages(void *arg) {
     return NULL;
 }
 
-int main() {
+int main()
+{
     struct sockaddr_in server_addr;
 
     // Create socket
