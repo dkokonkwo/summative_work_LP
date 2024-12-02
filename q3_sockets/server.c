@@ -24,6 +24,7 @@ int online[MAX_CLIENTS] = {0};
 char *verify_user(int socket)
 {
     char *username = malloc(BUFFER_SIZE);
+    char success[BUFFER_SIZE] = "Login successful";
     if (!username)
     {
         perror("Malloc failed..");
@@ -31,46 +32,51 @@ char *verify_user(int socket)
     }
     char prompt[BUFFER_SIZE] = "Enter your username: ";
     send(socket, prompt, strlen(prompt), 0);
-    printf("Verifying user...\n");
     while (1)
     {
+
         memset(username, 0, BUFFER_SIZE);
         int valread = recv(socket, username, BUFFER_SIZE, 0);
         if (valread <= 0)
         {
-            printf("Client disconnected.\n");
-            free(username);
-            return NULL;
+            continue;
         }
 
-        username[valread] = '\0';
-
-        for (int i = 0; i < MAX_CLIENTS; i++)
+        else 
         {
-            if (strcmp(usernames[i], username) == 0)
+            username[valread] = '\0';
+            printf("Verifying user...\n");
+            printf("%s\n", username);
+
+            for (int i = 0; i < MAX_CLIENTS; i++)
             {
-                if (online[i] == 1)
+                if (strcmp(usernames[i], username) == 0)
                 {
-                    char msg[BUFFER_SIZE] = "User already logged in. Try a different username.\n";
-                    send(socket, msg, strlen(msg), 0);
-                }
-                else
-                {
-                    printf("Login successful for user: %s\n", username);
-                    online[i] = 1;
-                    return username;
+                    if (online[i] == 1)
+                    {
+                        char msg[BUFFER_SIZE] = "User already logged in. Try a different username.\n";
+                        send(socket, msg, strlen(msg), 0);
+                    }
+                    else
+                    {
+                        printf("Login successful for user: %s\n", username);
+                        online[i] = 1;
+                        send(socket, success, strlen(success), 0);
+                        return username;
+                    }
                 }
             }
-        }
 
-        if (strncmp(username, "exit", 4) == 0) {
-            printf("Client chose to exit during login.\n");
-            free(username);
-            return NULL;
-        }
+            if (strncmp(username, "exit", 4) == 0) {
+                printf("Client chose to exit during login.\n");
+                free(username);
+                return NULL;
+            }
 
-        char error_msg[BUFFER_SIZE] = "Login unsuccessful. Enter valid username or type \"exit\" to quit";
-        send(socket, error_msg, strlen(error_msg), 0);
+            char error_msg[BUFFER_SIZE] = "Login unsuccessful. Enter valid username or type \"exit\" to quit";
+            send(socket, error_msg, strlen(error_msg), 0);
+        }
+        
         
     }
 }
@@ -199,6 +205,7 @@ int main() {
                     // Client disconnected
                     close(sd);
                     client_socket[i] = 0;
+                    online[i] = 0;
                     printf("Client disconnected, socket fd is %d\n", sd);
                 } 
                 else 

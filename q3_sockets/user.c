@@ -29,7 +29,6 @@ int user_verify(int socket)
 
         printf("%s", server_response);
 
-        printf("Enter your username: ");
         fgets(my_username, BUFFER_SIZE, stdin);
         my_username[strcspn(my_username, "\n")] = '\0';
 
