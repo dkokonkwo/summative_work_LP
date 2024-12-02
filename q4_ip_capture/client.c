@@ -5,10 +5,14 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <netdb.h>
+#include <pthread.h>
+#include <errno.h>
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define HOST "127.0.0.1"
+#define NETWORK_PREFIX "192.168.1"
 
 int sockfd;  // Global variable for the server socket
 
@@ -36,22 +40,44 @@ void *receive_messages(void *arg) {
     return NULL;
 }
 
-void *send_messages(void *arg) {
+void scan_network_and_send() {
+    char ip[BUFFER_SIZE];
     char message[BUFFER_SIZE];
-    while (1) {
-        memset(message, 0, BUFFER_SIZE);
+    struct sockaddr_in sa;
+    socklen_t len = sizeof(sa);
+    struct hostent *he;
 
-        // Get message from client user
-        printf("Client: ");
-        fgets(message, BUFFER_SIZE, stdin);
-        send(sockfd, message, strlen(message), 0);
+    for (int i = 1; i <= 254; i++) {
+        snprintf(ip, BUFFER_SIZE, "%s.%d", NETWORK_PREFIX, i);
 
-        // Check for "bye" to end the chat
-        if (strncmp(message, "done", 4) == 0) {
-            printf("Client ended the chat.\n");
-            break;
+        // Check if the IP is reachable via a socket connection
+        sa.sin_family = AF_INET;
+        sa.sin_port = htons(PORT);
+        if (inet_pton(AF_INET, ip, &sa.sin_addr) <= 0) {
+            continue; // Skip invalid IPs
         }
+
+        // Try resolving hostname
+        he = gethostbyaddr(&sa.sin_addr, sizeof(sa.sin_addr), AF_INET);
+        if (he) {
+            snprintf(message, BUFFER_SIZE, "IP: %s, Hostname: %s", ip, he->h_name);
+        } else {
+            snprintf(message, BUFFER_SIZE, "IP: %s, Hostname: Unknown", ip);
+        }
+
+        // Send the IP and hostname to the server
+        send(sockfd, message, strlen(message), 0);
+        printf("Sent: %s\n", message);
     }
+
+    // Signal the server that the scan is done
+    strcpy(message, "done");
+    send(sockfd, message, strlen(message), 0);
+    printf("Scan complete.\n");
+}
+
+void *send_messages(void *arg) {
+    scan_network_and_send();
     return NULL;
 }
 
