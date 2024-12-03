@@ -1,0 +1,6 @@
+add_c.py
+sys_calc.c
+sysmonitor.egg-info/PKG-INFO
+sysmonitor.egg-info/SOURCES.txt
+sysmonitor.egg-info/dependency_links.txt
+sysmonitor.egg-info/top_level.txt

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <dirent.h>
+#include "monitor.h"
 
 #define USAGE_FILE "usage.txt"
 #define PROCESSES_FILE "processes.txt"
@@ -116,9 +117,15 @@ void list_processes(void)
     fclose(file);
 }
 
-int main(void)
+int system_monitor(int runtime)
 {
-    while (1) 
+    if (runtime  <= 5)
+    {
+        printf("Proccess should run longer than 5 times");
+        return 0;
+    }
+
+    while (runtime != 0) 
     {
         double cpu_usage = get_cpu_usage();
         double mem_usage = get_memory_usage();
@@ -147,7 +154,8 @@ int main(void)
         list_processes();
 
         sleep(2);
+        runtime--;
     }
 
-    return 0;
+    return 1;
 }
