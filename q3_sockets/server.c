@@ -154,12 +154,10 @@ void *client_handler(void *arg)
             if (recipient >= 0 && recipient < MAX_CLIENTS && online[recipient] && client_sockets[recipient] > 0)
             {
                 snprintf(message, BUFFER_SIZE, "%s: %s", username, msg_start);
-                send(client_sockets[recipient], message, strlen(message), 0);
                 send(client_socket, "Message sent\n", strlen("Message sent\n"), 0);
             }
             else
             {
-                send(client_socket, buffer, strlen(buffer), 0);
                 send(client_socket, "Invalid recipient or user offline\n", strlen("Invalid recipient or user offline\n"), 0);
             }
             pthread_mutex_unlock(&lock);
@@ -170,6 +168,7 @@ void *client_handler(void *arg)
         }
         else
         {
+            printf("%s\n", message);
             send(client_socket, "Invalid message format. Use <recipient index> <message>\n",
                  strlen("Invalid message format. Use <recipient index> <message>\n"), 0);
         }
@@ -219,8 +218,6 @@ char *verify_user(int client_socket)
             }
         }
         pthread_mutex_unlock(&lock);
-        send(client_socket, username, strlen(username), 0);
-        printf("wha: %s\n", username);
         send(client_socket, "Invalid username. Try again.\n", strlen("Invalid username. Try again.\n"), 0);
     }
 }

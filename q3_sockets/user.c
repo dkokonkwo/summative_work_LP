@@ -9,7 +9,6 @@
 #define BUFFER_SIZE 1024
 
 int sock = 0; // Global socket for communication
-int verified = 0;
 
 void *receive_messages(void *arg) 
 {
@@ -46,8 +45,7 @@ void *send_messages(void *arg)
         memset(message, 0, BUFFER_SIZE);
 
         // Getting message from server or chat
-        if (verified)
-            printf("You: ");
+        printf("You: ");
         fgets(message, BUFFER_SIZE, stdin);
         send(sock, message, strlen(message), 0);
 
