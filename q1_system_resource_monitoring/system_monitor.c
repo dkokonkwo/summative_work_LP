@@ -134,9 +134,13 @@ int main(void)
 
         time_t now = time(NULL);
         fprintf(usage_file, "Timestamp: %s", ctime(&now));
+        printf("Timestamp: %s\n", ctime(&now));
         fprintf(usage_file, "CPU Usage: %.2f%%\n", cpu_usage);
+        printf("CPU Usage: %.2f%%\n", cpu_usage);
         fprintf(usage_file, "Memory Usage: %.2f%%\n", mem_usage);
+        printf("Memory Usage: %.2f%%\n", mem_usage);
         fprintf(usage_file, "Network Usage: %ld KB\n\n", net_usage);
+        printf("Network Usage: %ld KB\n\n", net_usage);
         fclose(usage_file);
 
         // Update processes list
