@@ -7,4 +7,4 @@ long get_network_usage(void);
 double get_memory_usage(void);
 double get_cpu_usage(void);
 
-#endif
+#endif // MONITOR_H
