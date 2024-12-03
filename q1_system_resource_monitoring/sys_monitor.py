@@ -29,49 +29,50 @@ for i in range(0, len(lines), 4):
     memory_usages.append(float(memory))
     network_usages.append(int(network))
 
-print(timestamps)
-print(cpu_usages)
-print(memory_usages)
-print(network_usages)
+# print(timestamps)
+# print(cpu_usages)
+# print(memory_usages)
+# print(network_usages)
 
-def normalize(data):
+# Normalizing values to fit in graph
+def normalize(data, decimals=2):
     min_val = min(data)
     max_val = max(data)
-    return [(x - min_val) / (max_val - min_val) for x in data]
+    return [round((x - min_val) / (max_val - min_val), 2) for x in data]
 
 normalized_cpu = normalize(cpu_usages)
 normalized_memory = normalize(memory_usages)
 normalized_network = normalize(network_usages)
 
-print(normalized_cpu)
-print(normalized_memory)
-print(normalized_network)
+# print(normalized_cpu)
+# print(normalized_memory)
+# print(normalized_network)
 
 # Plot the data
-# plt.figure(figsize=(12, 6))
+plt.figure(figsize=(12, 6))
 
-# # Plot CPU usage
-# plt.plot(timestamps, cpu_usages, label="CPU Usage (%)", marker='o')
+# Plot CPU usage
+plt.plot(timestamps, normalized_cpu, label="CPU Usage (%)", marker='o')
 
-# # Plot Memory usage
-# plt.plot(timestamps, memory_usages, label="Memory Usage (%)", marker='x')
+# Plot Memory usage
+plt.plot(timestamps, normalized_memory, label="Memory Usage (%)", marker='x')
 
-# # Plot Network usage (scaled for visualization)
-# plt.plot(timestamps, network_usages, label="Network Usage (KB)", marker='s', linestyle='--')
+# Plot Network usage (scaled for visualization)
+plt.plot(timestamps, normalized_network, label="Network Usage (KB)", marker='s', linestyle='--')
 
-# # Customize the plot
-# plt.xlabel("Time")
-# plt.ylabel("Usage")
-# plt.title("System Resource Usage Over Time")
-# plt.legend()
-# plt.grid(True)
+# Customize the plot
+plt.xlabel("Time")
+plt.ylabel("Usage")
+plt.title("System Resource Usage Over Time")
+plt.legend()
+plt.grid(True)
 
-# # Rotate x-axis labels for better readability
-# plt.xticks(rotation=45)
-# plt.tight_layout()
+# Rotate x-axis labels for better readability
+plt.xticks(rotation=45)
+plt.tight_layout()
 
-# # Show the plot
-# # plt.show()
+# Show the plot
+# plt.show()
 
-# # Saving the plot
-# plt.savefig("resource_usage.png")
+# Saving the plot
+plt.savefig("resource_usage.png")
