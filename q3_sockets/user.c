@@ -3,26 +3,43 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
+#include <pthread.h>
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
-int user_verify(int socket)
-{
+int sock = 0; // Global socket for communication
+
+void *receive_messages(void *arg) {
+    char buffer[BUFFER_SIZE];
+    while (1) {
+        memset(buffer, 0, BUFFER_SIZE);
+        int valread = recv(sock, buffer, BUFFER_SIZE, 0);
+        if (valread > 0) {
+            buffer[valread] = '\0';
+            printf("\n%s\n", buffer); // Display the received message
+        } else if (valread == 0) {
+            printf("\nServer disconnected.\n");
+            break;
+        } else {
+            perror("Error receiving message");
+            break;
+        }
+    }
+    return NULL;
+}
+
+int user_verify(int socket) {
     char server_response[BUFFER_SIZE];
     char my_username[BUFFER_SIZE];
-    while (1)
-    {
+    while (1) {
         int valread = recv(socket, server_response, BUFFER_SIZE, 0);
-        if (valread <= 0)
-        {
+        if (valread <= 0) {
             printf("Server disconnected.\n");
             return 0;
         }
         server_response[valread] = '\0';
-        if (strncmp(server_response, "Login successful", 16) == 0)
-        {
+        if (strncmp(server_response, "Login successful", 16) == 0) {
             printf("%s\n", server_response);
             return 1;
         }
@@ -34,8 +51,7 @@ int user_verify(int socket)
 
         send(socket, my_username, strlen(my_username), 0);
 
-        if (strcmp(my_username, "exit") == 0)
-        {
+        if (strcmp(my_username, "exit") == 0) {
             printf("Client chose to exit during login.\n");
             return 0;
         }
@@ -43,10 +59,10 @@ int user_verify(int socket)
 }
 
 int main() {
-    int sock = 0;
     struct sockaddr_in serv_addr;
     char buffer[BUFFER_SIZE] = {0};
     int verified;
+    pthread_t recv_thread;
 
     // Create socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -64,7 +80,7 @@ int main() {
     }
 
     // Connect to server
-    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         printf("Connection failed\n");
         return -1;
     }
@@ -73,55 +89,44 @@ int main() {
 
     verified = user_verify(sock);
 
-    if (!verified)
-    {
-        printf("Could not verify user.\n Ending connection\n");
+    if (!verified) {
+        printf("Could not verify user. Ending connection.\n");
         close(sock);
         return 1;
     }
 
+    // Start a thread to receive messages
+    if (pthread_create(&recv_thread, NULL, receive_messages, NULL) != 0) {
+        perror("Failed to create thread");
+        close(sock);
+        return -1;
+    }
+
     while (1) {
-        printf("Use <receipent index> <message> to chat (or type end to quit): ");
+        printf("Use <recipient index> <message> to chat (or type end to quit): ");
         memset(buffer, 0, BUFFER_SIZE);
         fgets(buffer, BUFFER_SIZE, stdin);
 
         buffer[strcspn(buffer, "\n")] = '\0';
 
         // Check for "end" message to terminate connection
-        if (strncmp(buffer, "end", 3) == 0)
-        {
+        if (strncmp(buffer, "end", 3) == 0) {
             send(sock, buffer, strlen(buffer), 0);
             printf("Ending connection.\n");
             break;
         }
 
         // Sending message to the server
-        if (send(sock, buffer, strlen(buffer), 0) < 0)
-        {
+        if (send(sock, buffer, strlen(buffer), 0) < 0) {
             perror("Failed to send message");
-            break;
-        }
-
-        // Receive the response from the server
-        memset(buffer, 0, BUFFER_SIZE);
-        int valread = recv(sock, buffer, BUFFER_SIZE, 0);
-        if (valread > 0)
-        {
-            printf("Server response: %s\n", buffer);
-        }
-        else if (valread == 0)
-        {
-            printf("Server disconnected.\n");
-            break;
-        }
-        else
-        {
-            perror("Error receiving server response");
             break;
         }
     }
 
-    // Close the socket
+    // Clean up and close the socket
+    pthread_cancel(recv_thread); // Cancel the receiving thread
+    pthread_join(recv_thread, NULL);
     close(sock);
+
     return 0;
 }
