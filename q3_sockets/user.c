@@ -9,20 +9,51 @@
 #define BUFFER_SIZE 1024
 
 int sock = 0; // Global socket for communication
+int verified = 0;
 
-void *receive_messages(void *arg) {
+void *receive_messages(void *arg) 
+{
     char buffer[BUFFER_SIZE];
     while (1) {
         memset(buffer, 0, BUFFER_SIZE);
         int valread = recv(sock, buffer, BUFFER_SIZE, 0);
-        if (valread > 0) {
+        if (valread > 0)
+        {
             buffer[valread] = '\0';
-            printf("\n%s\n", buffer); // Display the received message
-        } else if (valread == 0) {
+            printf("%s\n", buffer);
+            // Display the received message
+        }
+        else if (valread == 0)
+        {
             printf("\nServer disconnected.\n");
             break;
-        } else {
+        }
+        else
+        {
             perror("Error receiving message");
+            break;
+        }
+        
+    }
+    return NULL;
+}
+
+void *send_messages(void *arg)
+{
+    char message[BUFFER_SIZE];
+    while(1)
+    {
+        memset(message, 0, BUFFER_SIZE);
+
+        // Getting message from server or chat
+        if (verified)
+            printf("You: ");
+        fgets(message, BUFFER_SIZE, stdin);
+        send(sock, message, strlen(message), 0);
+
+        if (strncmp(message, "end", 3) == 0)
+        {
+            printf("You've ended your chat.\n");
             break;
         }
     }
@@ -39,8 +70,10 @@ int user_verify(int socket) {
             return 0;
         }
         server_response[valread] = '\0';
-        if (strncmp(server_response, "Login successful", 16) == 0) {
+
+        if (strncmp(server_response, "logged in", 9) == 0) {
             printf("%s\n", server_response);
+            printf("Verified\n");
             return 1;
         }
 
@@ -61,8 +94,8 @@ int user_verify(int socket) {
 int main() {
     struct sockaddr_in serv_addr;
     char buffer[BUFFER_SIZE] = {0};
-    int verified;
-    pthread_t recv_thread;
+    int success = 0;
+    // pthread_t recv_thread;
 
     // Create socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -87,46 +120,19 @@ int main() {
 
     printf("Connected to the server.\n");
 
-    verified = user_verify(sock);
-
-    if (!verified) {
-        printf("Could not verify user. Ending connection.\n");
-        close(sock);
-        return 1;
+    while (!success)
+    {
+        success = user_verify(sock);
     }
 
-    // Start a thread to receive messages
-    if (pthread_create(&recv_thread, NULL, receive_messages, NULL) != 0) {
-        perror("Failed to create thread");
-        close(sock);
-        return -1;
-    }
-
-    while (1) {
-        printf("Use <recipient index> <message> to chat (or type end to quit): ");
-        memset(buffer, 0, BUFFER_SIZE);
-        fgets(buffer, BUFFER_SIZE, stdin);
-
-        buffer[strcspn(buffer, "\n")] = '\0';
-
-        // Check for "end" message to terminate connection
-        if (strncmp(buffer, "end", 3) == 0) {
-            send(sock, buffer, strlen(buffer), 0);
-            printf("Ending connection.\n");
-            break;
-        }
-
-        // Sending message to the server
-        if (send(sock, buffer, strlen(buffer), 0) < 0) {
-            perror("Failed to send message");
-            break;
-        }
-    }
-
-    // Clean up and close the socket
-    pthread_cancel(recv_thread); // Cancel the receiving thread
+    pthread_t send_thread, recv_thread;
+    pthread_create(&recv_thread, NULL, receive_messages, NULL);
+    pthread_create(&send_thread, NULL, send_messages, NULL);
+    
     pthread_join(recv_thread, NULL);
-    close(sock);
+    pthread_join(send_thread, NULL);
 
+
+    close(sock);
     return 0;
 }

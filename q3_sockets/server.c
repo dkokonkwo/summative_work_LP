@@ -195,13 +195,15 @@ char *verify_user(int client_socket)
                 else
                 {
                     online[i] = 1;
+                    send(client_socket, "logged in\n", strlen("logged in\n"), 0);
                     pthread_mutex_unlock(&lock);
                     return username;
                 }
             }
         }
         pthread_mutex_unlock(&lock);
-        // send(client_socket, username, strlen(username), 0);
+        send(client_socket, username, strlen(username), 0);
+        printf("wha: %s\n", username);
         send(client_socket, "Invalid username. Try again.\n", strlen("Invalid username. Try again.\n"), 0);
     }
 }
