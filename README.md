@@ -72,3 +72,7 @@ Tasks:
 Complete a client-server application 
 The client will return all IP addresses and Hostnames for all nodes in the same network (minimum two devices)
 The server will log all IP addresses and hostnames in a text file.
+
+
+** LINK TO PRESENTAION: **
+Google Drive: https://drive.google.com/file/d/1WOVbELc3ZE9zSziYufS-uCHKHmjBKmr6/view?usp=sharing
