@@ -74,5 +74,5 @@ The client will return all IP addresses and Hostnames for all nodes in the same 
 The server will log all IP addresses and hostnames in a text file.
 
 
-** LINK TO PRESENTAION: **
+** LINK TO PRESENTATION: **
 Google Drive: https://drive.google.com/file/d/1WOVbELc3ZE9zSziYufS-uCHKHmjBKmr6/view?usp=sharing
