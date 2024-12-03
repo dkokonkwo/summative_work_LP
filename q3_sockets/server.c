@@ -76,8 +76,7 @@ int main()
         {
             if (client_sockets[i] == 0)
             {
-                client_sockets[i] = new_socket;
-                if (pthread_create(&threads[i], NULL, client_handler, &client_sockets[i]) != 0)
+                if (pthread_create(&threads[i], NULL, client_handler, &new_socket) != 0)
                 {
                     perror("Thread creation failed");
                 }
@@ -102,7 +101,21 @@ void *client_handler(void *arg)
         pthread_exit(NULL);
     }
 
-    printf("User logged in: %s\n", username);
+    for (int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if (strcmp(usernames[i], username) == 0 && client_sockets[i] == 0)
+        {
+            client_sockets[i] = client_socket;
+            printf("User logged in: %s\n", username);
+            break;
+        }
+        else if (strcmp(usernames[i], username) == 0 && client_sockets[i] != 0)
+        {
+            printf("User already logged in.\n");
+            break;
+        }
+    }
+
     show_online_users(client_socket);
 
     while (1)
@@ -150,6 +163,10 @@ void *client_handler(void *arg)
                 send(client_socket, "Invalid recipient or user offline\n", strlen("Invalid recipient or user offline\n"), 0);
             }
             pthread_mutex_unlock(&lock);
+        }
+        else if (strncmp(message, "show online", 11) == 0)
+        {
+            show_online_users(client_socket);
         }
         else
         {
