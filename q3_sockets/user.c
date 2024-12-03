@@ -45,8 +45,9 @@ void *send_messages(void *arg)
         memset(message, 0, BUFFER_SIZE);
 
         // Getting message from server or chat
-        printf("You: ");
+        printf("You:\n");
         fgets(message, BUFFER_SIZE, stdin);
+        message[strcspn(message, "\n")] = '\0';
         send(sock, message, strlen(message), 0);
 
         if (strncmp(message, "end", 3) == 0)
