@@ -45,7 +45,7 @@ void *send_messages(void *arg)
         memset(message, 0, BUFFER_SIZE);
 
         // Getting message from server or chat
-        printf("You:\n");
+        // printf("You:\n");
         fgets(message, BUFFER_SIZE, stdin);
         message[strcspn(message, "\n")] = '\0';
         send(sock, message, strlen(message), 0);
@@ -72,7 +72,7 @@ int user_verify(int socket) {
 
         if (strncmp(server_response, "logged in", 9) == 0) {
             printf("%s\n", server_response);
-            printf("Verified\n");
+            printf("Verified. Chat open\n");
             return 1;
         }
 

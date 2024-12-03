@@ -164,7 +164,7 @@ void *client_handler(void *arg)
             }
             pthread_mutex_unlock(&lock);
         }
-        else if (strncmp(message, "show online", 11) == 0)
+        else if (strncmp(buffer, "show online", 11) == 0)
         {
             show_online_users(client_socket);
         }
